@@ -1076,7 +1076,7 @@ static void ExceptionEntry(uc_engine *uc, bool is_tail_chained, bool skip_instru
     uc_reg_write(uc, UC_ARM_REG_PC, &isr_entry);
 
     #ifdef DEBUG_NVIC
-    printf("Redirecting irq %d to isr: %08x\n", ExceptionNumber, isr_entry);
+    printf("Redirecting irq %d to isr: %08x, taken from vtor %08x\n", ExceptionNumber, isr_entry, nvic.vtor);
     #endif
 
     // Prepare new XPSR state
