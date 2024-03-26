@@ -139,6 +139,15 @@ static void interrupt_trigger_timer_cb(uc_engine *uc, uint32_t timer_id, void *u
     trigger->skip_next = 0;
 }
 
+static void interrupt_trigger_delayed_cb(uc_engine *uc, uint64_t address, uint32_t size, void *user_data) {
+    InterruptTrigger *trigger = (InterruptTrigger *) user_data;
+    // delete the hook as we use a timer from now on
+    uc_hook_del(uc, trigger->hook_handle);
+    // insert timer
+    trigger->timer_id = add_timer(get_timer_scale()*trigger->every_nth_tick, interrupt_trigger_timer_cb, trigger, TIMER_IRQ_NOT_USED);
+    start_timer(uc, trigger->timer_id);
+}
+
 uc_hook add_interrupt_trigger(uc_engine *uc, uint64_t addr, uint32_t irq, uint32_t num_skips, uint32_t num_pends, uint32_t fuzz_mode, uint32_t trigger_mode, uint64_t every_nth_tick) {
     if(num_triggers_inuse >= MAX_INTERRUPT_TRIGGERS) {
         perror("[INTERRUPT_TRIGGERS ERROR] register_interrupt_trigger: Maxmimum number of interrupt triggers exhausted.\n");
@@ -158,6 +167,11 @@ uc_hook add_interrupt_trigger(uc_engine *uc, uint64_t addr, uint32_t irq, uint32
     trigger->fuzz_mode = fuzz_mode;
     trigger->round_robin_index = 0;
     trigger->trigger_mode = trigger_mode;
+    if(every_nth_tick == 0) {
+        trigger->every_nth_tick = IRQ_DEFAULT_TIMER_INTERVAL;
+    } else {
+        trigger->every_nth_tick = every_nth_tick;
+    }
 
     if(trigger_mode == IRQ_TRIGGER_MODE_ADDRESS) {
         if (uc_hook_add(uc, &trigger->hook_handle, UC_HOOK_BLOCK, (void *)interrupt_trigger_tick_block_hook, trigger, addr, addr) != UC_ERR_OK) {
@@ -165,12 +179,13 @@ uc_hook add_interrupt_trigger(uc_engine *uc, uint64_t addr, uint32_t irq, uint32
             exit(-1);
         }
     } else if (trigger_mode == IRQ_TRIGGER_MODE_TIME || trigger_mode == IRQ_TRIGGER_MODE_TIME_FUZZED) {
-        if(every_nth_tick == 0) {
-            every_nth_tick = IRQ_DEFAULT_TIMER_INTERVAL;
-        }
-
-        trigger->timer_id = add_timer(get_timer_scale()*every_nth_tick, interrupt_trigger_timer_cb, trigger, TIMER_IRQ_NOT_USED);
+        trigger->timer_id = add_timer(get_timer_scale()*trigger->every_nth_tick, interrupt_trigger_timer_cb, trigger, TIMER_IRQ_NOT_USED);
         start_timer(uc, trigger->timer_id);
+    } else if (trigger_mode == IRQ_TRIGGER_MODE_DELAYED_TIME ){
+        if (uc_hook_add(uc, &trigger->hook_handle, UC_HOOK_BLOCK, (void *)interrupt_trigger_delayed_cb, trigger, addr, addr) != UC_ERR_OK) {
+            perror("[INTERRUPT_TRIGGERS ERROR] Failed adding block delayed time hook.\n");
+            exit(-1);
+        }
     } else {
         return -1;
     }

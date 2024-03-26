@@ -27,4 +27,4 @@ PAGE_SIZE = 0x1000
 #define IRQ_FUZZ_MODE_ROUND_ROBIN 2
 """
 FUZZ_MODES = ('fixed', 'fuzzed', 'round_robin')
-TRIGGER_MODES = ('addr', 'every_nth_tick', 'fuzzed')
+TRIGGER_MODES = ('addr', 'every_nth_tick', 'fuzzed', 'delayed_tick')

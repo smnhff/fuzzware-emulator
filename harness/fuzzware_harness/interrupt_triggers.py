@@ -6,12 +6,17 @@ def init_triggers(uc, entries):
     for entry in entries.values():
         # 1. When to trigger
         addr = parse_address_value(uc.symbols, entry['address']) if 'address' in entry else(parse_address_value(uc.symbols, entry['addr']) if 'addr' in entry else None)
-        if addr is not None:
+        every_nth_tick = entry.get('every_nth_tick', None)
+        if addr is not None and every_nth_tick is not None:
+            # we have both a fixed address and a tick rate
+            # we will trigger the interrupts time-based after
+            # hitting the address
+            trigger_mode = 'delayed_tick'
+        elif addr is not None:
             # We have a fixed address to trigger at
             trigger_mode = 'addr'
         else:
             # We trigger time-based
-            every_nth_tick = entry.get('every_nth_tick', None)
             if every_nth_tick in ('fuzzed', 'fuzz'):
                 trigger_mode = 'fuzzed'
             else:
@@ -37,9 +42,9 @@ def init_triggers(uc, entries):
             (trigger_mode == 'fuzzed')
         )
         # Add non-used default values for When-config
-        if trigger_mode != 'addr':
+        if trigger_mode != 'addr' and trigger_mode != 'delayed_tick':
             addr = 0
-        if trigger_mode != 'every_nth_tick':
+        if trigger_mode != 'every_nth_tick' and trigger_mode != 'delayed_tick':
             every_nth_tick = 0
 
         # Backwards compatibility with previous syntax

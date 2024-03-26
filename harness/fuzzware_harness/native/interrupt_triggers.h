@@ -10,6 +10,7 @@
 #define IRQ_TRIGGER_MODE_ADDRESS 0
 #define IRQ_TRIGGER_MODE_TIME 1
 #define IRQ_TRIGGER_MODE_TIME_FUZZED 2
+#define IRQ_TRIGGER_MODE_DELAYED_TIME 3
 
 #define IRQ_DEFAULT_TIMER_INTERVAL 1000
 
@@ -25,6 +26,7 @@ typedef struct InterruptTrigger {
     uint32_t curr_pends; /* Currently already pended */
     uint32_t trigger_mode; /* Mode of deriving interrupt trigger timings */
     uint32_t timer_id; /* The timer associated with the trigger */
+    uint32_t every_nth_tick; /* Number of blocks to skip for timer-based interrupt */
 } InterruptTrigger;
 
 uc_hook add_interrupt_trigger(uc_engine *uc, uint64_t addr, uint32_t irq, uint32_t num_skips, uint32_t num_pends, uint32_t fuzz_mode, uint32_t trigger_mode, uint64_t every_nth_tick);
