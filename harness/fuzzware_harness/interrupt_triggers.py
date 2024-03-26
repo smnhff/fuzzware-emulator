@@ -39,7 +39,8 @@ def init_triggers(uc, entries):
         assert (
             (trigger_mode == 'every_nth_tick' and (every_nth_tick is not None)) or
             (trigger_mode == 'addr' and (addr is not None)) or
-            (trigger_mode == 'fuzzed')
+            (trigger_mode == 'fuzzed') 
+            (trigger_mode == 'delayed_tick' and (every_nth_tick is not None) and (addr is not None))
         )
         # Add non-used default values for When-config
         if trigger_mode != 'addr' and trigger_mode != 'delayed_tick':
